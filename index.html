@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Journey — One Year</title>
+<style>
+
+/* ============================================================
+   EDIT ME FIRST: see the STOPS array near the bottom of the
+   <script> for all the text content, dates, and photo slots.
+   Everything else here is styling / mechanics — safe to leave.
+   ============================================================ */
+
+:root{
+  --ink: #2b2140;
+  --cream: #fdf3e7;
+  --dusk-1: #232a52;
+  --dusk-2: #4a3f7a;
+  --dusk-3: #8a5fa8;
+  --dusk-4: #d97fa0;
+  --dusk-5: #f2a65a;
+  --dusk-6: #ffd27a;
+  --rose: #ff6f91;
+  --gold: #ffcf6b;
+  --card-bg: #fffaf1;
+  --section-h: 780px;
+  --path-w: 4;
+}
+@media (max-width: 640px){
+  :root{ --section-h: 640px; }
+}
+
+*{ box-sizing: border-box; }
+html{ scroll-behavior: smooth; }
+body{
+  margin:0;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--dusk-1);
+  overflow-x: hidden;
+}
+
+h1,h2,h3, .pixel-label{
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.6;
+}
+
+/* ---------- backdrop that shifts from dusk to sunset as you scroll ---------- */
+#backdrop{
+  position: fixed; inset:0; z-index:-2;
+  background: linear-gradient(180deg, var(--dusk-1), var(--dusk-2));
+  transition: background 0.4s linear;
+}
+#stars{
+  position: fixed; inset:0; z-index:-1; pointer-events:none;
+  opacity: 0.9;
+}
+
+/* ---------- intro ---------- */
+#intro{
+  min-height: 100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding: 32px; position:relative;
+}
+#intro .eyebrow{
+  font-size: 10px; letter-spacing:2px; color: var(--gold); margin-bottom:18px;
+}
+#intro h1{
+  font-size: clamp(22px, 5vw, 40px); color:#fff; margin:0 0 18px; text-shadow: 0 3px 0 rgba(0,0,0,0.25);
+}
+#intro p{
+  color: #eae4ff; font-size: 16px; max-width: 480px; margin: 0 auto 40px; line-height:1.6;
+}
+.scroll-cue{
+  font-family:'Press Start 2P', monospace; font-size:10px; color:#fff;
+  animation: bob 1.6s infinite ease-in-out; opacity:0.85;
+}
+@keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(10px)} }
+
+/* ---------- track ---------- */
+#track{
+  position: relative;
+  width: 100%;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+#track svg{ position:absolute; top:0; left:0; width:100%; height:100%; display:block; }
+#pathLine{
+  fill:none;
+  stroke: var(--cream);
+  stroke-width: var(--path-w);
+  stroke-linecap: round;
+  stroke-dasharray: 2 14;
+  opacity: 0.75;
+}
+
+.marker{
+  position:absolute;
+  transform: translate(-50%,-50%);
+  width: 34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
+  font-size: 18px;
+  background: var(--card-bg);
+  border-radius: 50%;
+  border: 3px solid var(--rose);
+  box-shadow: 0 0 0 0 rgba(255,111,145,0.6);
+  transition: transform 0.4s cubic-bezier(.34,1.56,.64,1), box-shadow 0.4s;
+  z-index: 3;
+}
+.marker.active{
+  transform: translate(-50%,-50%) scale(1.35);
+  box-shadow: 0 0 0 10px rgba(255,111,145,0);
+}
+.marker.upcoming{
+  border-style: dashed;
+  border-color: var(--dusk-6);
+  background: transparent;
+  color: #fff;
+}
+
+.stop-card.upcoming{
+  background: transparent;
+  border: 2px dashed rgba(255,255,255,0.55);
+  box-shadow: none;
+}
+.stop-card.upcoming h3,
+.stop-card.upcoming p,
+.stop-card.upcoming .date{ color: #fff; }
+.badge{
+  display:inline-block;
+  font-size: 10px;
+  font-family:'Press Start 2P', monospace;
+  color: var(--dusk-1);
+  background: var(--dusk-6);
+  padding: 4px 8px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.stop-card{
+  position:absolute;
+  width: min(320px, 78vw);
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+  opacity:0; transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  z-index: 2;
+}
+.stop-card.left{ transform: translate(-100%, 24px); }
+.stop-card.left.in{ transform: translate(calc(-100% - 26px), 0); }
+.stop-card.right.in{ transform: translate(26px, 0); }
+.stop-card.in{ opacity:1; }
+
+.stop-card .date{
+  font-family:'Press Start 2P', monospace;
+  font-size: 9px; color: var(--rose); margin-bottom:8px; display:block;
+}
+.stop-card h3{ font-size: 15px; margin: 0 0 10px; color: var(--ink); }
+.stop-card p{ font-size: 14px; line-height:1.55; margin:0; color:#4a4359; }
+.stop-card .photo{
+  width:100%; height:140px; border-radius:12px; margin-bottom:12px;
+  background: linear-gradient(135deg, var(--dusk-4), var(--dusk-6));
+  display:flex; align-items:center; justify-content:center;
+  font-size: 28px; color:#fff;
+  /* shown automatically when media.src is left blank */
+}
+.stop-card .media{
+  width:100%; max-height:220px; object-fit:cover;
+  border-radius:12px; margin-bottom:12px; display:block; background:#111;
+}
+.stop-card .loc{
+  margin-top:10px; font-size:12.5px; color:#8a5a75; font-weight:700;
+}
+.stop-card .mini-map{
+  width:100%; height:110px; border:0; border-radius:12px; margin-top:10px; display:block;
+}
+
+/* ---------- characters ---------- */
+.sprite{
+  position: fixed; top:0; left:0;
+  width: 56px; height: 74px;
+  pointer-events:none;
+  z-index: 50;
+  transform: translate(-50%, -80%);
+  filter: drop-shadow(0 6px 6px rgba(0,0,0,0.35));
+}
+.sprite canvas{
+  image-rendering: pixelated;
+  width:100%; height:100%;
+}
+.sprite.face-left canvas{ transform: scaleX(-1); }
+
+/* ---------- finale ---------- */
+#finale{
+  min-height: 100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding: 40px; position:relative; overflow:hidden;
+}
+#finale h2{ color:#fff; font-size: clamp(20px,4.5vw,32px); margin-bottom:20px; text-shadow:0 3px 0 rgba(0,0,0,0.25); }
+#finale p{ color:#fff0f5; max-width:500px; font-size:16px; line-height:1.7; margin: 0 auto; }
+#finale .sign{ margin-top: 28px; font-family:'Press Start 2P', monospace; font-size:11px; color: var(--gold); }
+
+.heart{
+  position:absolute; top:-40px; font-size: 20px; opacity:0.9;
+  animation: fall linear forwards;
+}
+@keyframes fall{
+  to{ transform: translateY(115vh) rotate(30deg); opacity:0.2; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  .scroll-cue, .heart{ animation:none; }
+}
+</style>
+</head>
+<body>
+
+<div id="backdrop"></div>
+<canvas id="stars"></canvas>
+
+<!-- ============== INTRO ============== -->
+<section id="intro">
+  <div class="eyebrow pixel-label">ONE YEAR TOGETHER</div>
+  <!-- EDIT ME: names -->
+  <h1>[Your Name] &amp; [Her Name]</h1>
+  <p>Every walk starts somewhere. Scroll down and follow us — from Taiwan, to LA, to Chicago,
+     and wherever we're headed next — every stop is a moment I didn't want to forget.</p>
+  <div class="scroll-cue">▼ SCROLL ▼</div>
+</section>
+
+<!-- ============== TRACK (filled by JS) ============== -->
+<div id="track"></div>
+
+<!-- ============== FINALE ============== -->
+<section id="finale">
+  <h2>Here's to Year Two</h2>
+  <!-- EDIT ME: closing message -->
+  <p>Thank you for every one of these moments, and every one still coming.
+     I love you. Happy anniversary.</p>
+  <div class="sign">♥ [Your Name]</div>
+</section>
+
+<!-- character sprites -->
+<div id="girlChar" class="sprite"><canvas width="12" height="16"></canvas></div>
+<div id="boyChar" class="sprite"><canvas width="12" height="16"></canvas></div>
+
+<script>
+/* ============================================================
+   EDIT ME: Fill in your real stops here. Add/remove as many as
+   you like — everything below adapts automatically.
+
+   media: { kind: 'image' | 'video' | 'none', src: 'assets/whatever.jpg' }
+     - Put your files in an /assets folder next to this HTML file
+       and point src at e.g. "assets/first-date.jpg" or "assets/trip.mp4"
+     - Leave src: "" to show a placeholder box instead
+
+   location: plain text shown as a pin badge, e.g. "Lou Malnati's, Chicago"
+   lat / lng: OPTIONAL — if you set both, a little embedded map appears.
+     Easiest way to get coordinates: search the place on Google Maps,
+     right-click the pin, click the lat/lng numbers to copy them.
+
+   upcoming: set true for a stop that hasn't happened yet (e.g. a planned
+     move). It renders with a dashed "coming soon" style instead of a
+     filled-in memory card.
+   ============================================================ */
+const STOPS = [
+  { date: "Replace with year", title: "Where It Began — Taiwan",
+    text: "Replace this with the story of how it started in Taiwan.",
+    media: { kind:"image", src:"" },
+    location: "Taipei, Taiwan", lat: 25.0330, lng: 121.5654, upcoming:false },
+
+  { date: "Replace with year", title: "The Move to LA",
+    text: "Replace this with a memory from the LA chapter.",
+    media: { kind:"image", src:"" },
+    location: "Los Angeles, CA", lat: 34.0522, lng: -118.2437, upcoming:false },
+
+  { date: "Replace with year", title: "A Favorite LA Memory",
+    text: "Replace this with another specific moment from LA.",
+    media: { kind:"video", src:"" },
+    location: "Los Angeles, CA", lat: 34.0522, lng: -118.2437, upcoming:false },
+
+  { date: "Replace with year", title: "Chicago",
+    text: "Replace this with the story of the move to Chicago.",
+    media: { kind:"image", src:"" },
+    location: "Chicago, IL", lat: 41.8781, lng: -87.6298, upcoming:false },
+
+  { date: "Replace with year", title: "A Chicago Memory",
+    text: "Replace this with a specific memory from Chicago.",
+    media: { kind:"image", src:"" },
+    location: "Chicago, IL", lat: 41.8781, lng: -87.6298, upcoming:false },
+
+  { date: "Today",       title: "One Year",
+    text: "Replace this with what today means to you.",
+    media: { kind:"image", src:"" },
+    location: "Chicago, IL", lat: 41.8781, lng: -87.6298, upcoming:false },
+
+  { date: "The future", title: "Next: Arizona",
+    text: "Replace this with what you're looking forward to about the move.",
+    media: { kind:"none", src:"" },
+    location: "Arizona", lat: 34.0489, lng: -111.0937, upcoming:true },
+];
+
+/* ---------------- starfield ---------------- */
+(function stars(){
+  const c = document.getElementById('stars');
+  const ctx = c.getContext('2d');
+  function size(){ c.width = innerWidth; c.height = innerHeight; }
+  size();
+  const pts = Array.from({length:90}, () => ({
+    x: Math.random()*c.width, y: Math.random()*c.height,
+    r: Math.random()*1.4+0.3, tw: Math.random()*Math.PI*2
+  }));
+  function draw(t){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = '#fff';
+    pts.forEach(p=>{
+      const a = 0.3 + 0.5*Math.abs(Math.sin(t/1200 + p.tw));
+      ctx.globalAlpha = a;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+  addEventListener('resize', size);
+})();
+
+/* ---------------- build the winding track ---------------- */
+const track = document.getElementById('track');
+const sectionH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--section-h'));
+const N = STOPS.length;
+const H = sectionH * N;
+track.style.height = H + 'px';
+
+// deterministic left/right sway per stop, exact points our path passes through
+const AMPS = [28,-24,30,-26,27,-22,29,-25,26,-23];
+const waypoints = STOPS.map((s,i)=>{
+  const x = 50 + AMPS[i % AMPS.length];
+  const y = (N === 1) ? sectionH/2 : (i/(N-1)) * (H - sectionH*0.4) + sectionH*0.2;
+  return {x,y};
+});
+
+// catmull-rom -> bezier smooth path through all waypoints
+function smoothPath(pts){
+  if(pts.length < 2) return '';
+  let d = `M ${pts[0].x} ${pts[0].y} `;
+  for(let i=0;i<pts.length-1;i++){
+    const p0 = pts[i-1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i+1];
+    const p3 = pts[i+2] || p2;
+    const c1x = p1.x + (p2.x - p0.x)/6;
+    const c1y = p1.y + (p2.y - p0.y)/6;
+    const c2x = p2.x - (p3.x - p1.x)/6;
+    const c2y = p2.y - (p3.y - p1.y)/6;
+    d += `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y} `;
+  }
+  return d;
+}
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const svg = document.createElementNS(svgNS,'svg');
+svg.setAttribute('viewBox', `0 0 100 ${H}`);
+svg.setAttribute('preserveAspectRatio','none');
+const pathEl = document.createElementNS(svgNS,'path');
+pathEl.setAttribute('id','pathLine');
+pathEl.setAttribute('d', smoothPath(waypoints));
+svg.appendChild(pathEl);
+track.appendChild(svg);
+const totalLen = pathEl.getTotalLength();
+
+/* markers + cards */
+const ICONS = ['💌','✈️','☕','🏙️','💛','🎉','⏳'];
+waypoints.forEach((wp,i)=>{
+  const upcoming = !!STOPS[i].upcoming;
+  const marker = document.createElement('div');
+  marker.className = 'marker' + (upcoming ? ' upcoming' : '');
+  marker.style.left = wp.x + '%';
+  marker.style.top = wp.y + 'px';
+  marker.textContent = upcoming ? '⏳' : ICONS[i % ICONS.length];
+  track.appendChild(marker);
+
+  const side = (i % 2 === 0) ? 'right' : 'left';
+  const card = document.createElement('div');
+  card.className = `stop-card ${side}` + (upcoming ? ' upcoming' : '');
+  card.style.top = (wp.y - 60) + 'px';
+  card.style.left = wp.x + '%';
+
+  const media = STOPS[i].media || { kind:'none', src:'' };
+  let mediaHtml = '';
+  if(media.kind === 'video'){
+    mediaHtml = media.src
+      ? `<video class="media" src="${media.src}" controls playsinline preload="metadata"></video>`
+      : `<div class="photo">🎬</div>`;
+  } else if(media.kind === 'image'){
+    mediaHtml = media.src
+      ? `<img class="media" src="${media.src}" alt="${STOPS[i].title}" loading="lazy">`
+      : `<div class="photo">📷</div>`;
+  }
+
+  const loc = STOPS[i].location;
+  const locHtml = loc ? `<div class="loc">📍 ${loc}</div>` : '';
+
+  let mapHtml = '';
+  if(STOPS[i].lat != null && STOPS[i].lng != null){
+    const lat = STOPS[i].lat, lng = STOPS[i].lng, d = 0.01;
+    mapHtml = `<iframe class="mini-map" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-d}%2C${lat-d}%2C${lng+d}%2C${lat+d}&layer=mapnik&marker=${lat}%2C${lng}"></iframe>`;
+  }
+
+  card.innerHTML = `
+    ${upcoming ? `<span class="badge">Coming soon</span>` : ''}
+    ${mediaHtml}
+    <span class="date">${STOPS[i].date}</span>
+    <h3>${STOPS[i].title}</h3>
+    <p>${STOPS[i].text}</p>
+    ${locHtml}
+    ${mapHtml}
+  `;
+  track.appendChild(card);
+
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      card.classList.toggle('in', e.isIntersecting);
+      marker.classList.toggle('active', e.isIntersecting);
+    });
+  }, { threshold: 0.35 });
+  obs.observe(card);
+});
+
+/* ---------------- pixel characters ----------------
+   Each character is a 12x16 grid of letters. Each letter is one pixel;
+   PALETTE maps letters to colors. FRAME_A/FRAME_B are the two walk-cycle
+   poses (legs together / apart) — rows 0-11 (head+torso) are identical
+   between the two frames, only the legs (rows 12-15ish) change.
+   To edit either character's look, edit its grid strings directly —
+   every row in a frame must stay 12 characters long.
+------------------------------------------------------ */
+const GIRL_FRAME_A = [
+"....hhhh....",
+"...hhhhhh...",
+"..hhffffhh..",
+"..hffffffh..",
+"...ffffff...",
+"....ffff....",
+".hddddddddh.",
+"hddddddddddh",
+"hddddddddddh",
+"hddddddddddh",
+"hddddddddddh",
+".hddddddddh.",
+"..dd....dd..",
+"..ll....ll..",
+"..ll....ll..",
+".sss....sss.",
+];
+const GIRL_FRAME_B = [
+"....hhhh....",
+"...hhhhhh...",
+"..hhffffhh..",
+"..hffffffh..",
+"...ffffff...",
+"....ffff....",
+".hddddddddh.",
+"hddddddddddh",
+"hddddddddddh",
+"hddddddddddh",
+"hddddddddddh",
+".hddddddddh.",
+".dd......dd.",
+".ll......ll.",
+"ll........ll",
+"sss......sss",
+];
+const GIRL_PALETTE = { h:'#4a2c2a', f:'#f4c2a1', d:'#ff6f91', l:'#2b3a67', s:'#1a1a2e' };
+
+const BOY_FRAME_A = [
+"....hhhh....",
+"...hhhhhh...",
+"..hhffffhh..",
+"..hffffffh..",
+"...ffffff...",
+"....ffff....",
+"..pppppppp..",
+"..pppppppp..",
+"..pppppppp..",
+"..pppppppp..",
+"..qq....qq..",
+"..qq....qq..",
+"..qq....qq..",
+"..qq....qq..",
+"..qq....qq..",
+".sss....sss.",
+];
+const BOY_FRAME_B = [
+"....hhhh....",
+"...hhhhhh...",
+"..hhffffhh..",
+"..hffffffh..",
+"...ffffff...",
+"....ffff....",
+"..pppppppp..",
+"..pppppppp..",
+"..pppppppp..",
+"..pppppppp..",
+"..qq....qq..",
+"..qq....qq..",
+".qq......qq.",
+".qq......qq.",
+"qq........qq",
+"sss......sss",
+];
+const BOY_PALETTE = { h:'#241a14', f:'#e8b48f', p:'#3d5a80', q:'#232a52', s:'#1a1a2e' };
+
+// each entry: { el, canvas, ctx, frameA, frameB, palette, offset (px, + = right of the path) }
+const CHARACTERS = [
+  { el: document.getElementById('girlChar'), frameA: GIRL_FRAME_A, frameB: GIRL_FRAME_B, palette: GIRL_PALETTE, offset: -16 },
+  { el: document.getElementById('boyChar'),  frameA: BOY_FRAME_A,  frameB: BOY_FRAME_B,  palette: BOY_PALETTE,  offset: 16 },
+];
+CHARACTERS.forEach(c=>{
+  c.canvas = c.el.querySelector('canvas');
+  c.ctx = c.canvas.getContext('2d');
+});
+
+function drawFrame(c, frame){
+  c.ctx.clearRect(0,0,c.canvas.width,c.canvas.height);
+  frame.forEach((row,y)=>{
+    for(let x=0;x<row.length;x++){
+      const ch = row[x];
+      if(ch === '.') continue;
+      c.ctx.fillStyle = c.palette[ch];
+      c.ctx.fillRect(x,y,1,1);
+    }
+  });
+}
+CHARACTERS.forEach(c=> drawFrame(c, c.frameA));
+
+let walkFrame = 0, walkTimer = null, lastX = null;
+
+function setWalking(isWalking){
+  if(isWalking && !walkTimer){
+    walkTimer = setInterval(()=>{
+      walkFrame = 1 - walkFrame;
+      CHARACTERS.forEach(c=> drawFrame(c, walkFrame ? c.frameB : c.frameA));
+    }, 140);
+  } else if(!isWalking && walkTimer){
+    clearInterval(walkTimer); walkTimer = null;
+    CHARACTERS.forEach(c=> drawFrame(c, c.frameA));
+  }
+}
+
+let stopScrollTimeout = null;
+function updateCharacter(){
+  const trackTop = track.offsetTop;
+  const frac = Math.min(1, Math.max(0, (window.scrollY - trackTop + innerHeight*0.55) / (H)));
+  const len = frac * totalLen;
+  const pt = pathEl.getPointAtLength(len);
+  const ctm = pathEl.getScreenCTM();
+  const screenPt = pt.matrixTransform(ctm);
+
+  let dx = 0;
+  if(lastX !== null) dx = screenPt.x - lastX;
+  lastX = screenPt.x;
+
+  // fade characters in/out at the very start/end of the journey
+  const introEnd = document.getElementById('intro').offsetHeight * 0.6;
+  const finaleStart = document.getElementById('finale').offsetTop - innerHeight*0.4;
+  const visible = window.scrollY > introEnd*0.4 && window.scrollY < finaleStart + innerHeight;
+
+  CHARACTERS.forEach(c=>{
+    // offset lets the two characters walk side-by-side instead of stacking
+    c.el.style.left = (screenPt.x + c.offset) + 'px';
+    c.el.style.top = screenPt.y + 'px';
+    c.el.style.opacity = visible ? 1 : 0;
+    if(Math.abs(dx) > 0.15) c.el.classList.toggle('face-left', dx < 0);
+  });
+
+  setWalking(true);
+  clearTimeout(stopScrollTimeout);
+  stopScrollTimeout = setTimeout(()=> setWalking(false), 160);
+}
+
+let ticking = false;
+function onScroll(){
+  if(!ticking){
+    requestAnimationFrame(()=>{ updateCharacter(); ticking = false; });
+    ticking = true;
+  }
+}
+window.addEventListener('scroll', onScroll, { passive:true });
+window.addEventListener('resize', ()=>{ location.reload(); }); // simplest safe re-layout
+updateCharacter();
+
+/* ---------------- finale confetti hearts ---------------- */
+const finale = document.getElementById('finale');
+const finaleObs = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      spawnHearts();
+      finaleObs.disconnect();
+    }
+  });
+}, { threshold: 0.4 });
+finaleObs.observe(finale);
+
+function spawnHearts(){
+  const symbols = ['💛','💗','✨'];
+  for(let i=0;i<28;i++){
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+    h.style.left = Math.random()*100 + '%';
+    h.style.animationDuration = (4 + Math.random()*4) + 's';
+    h.style.animationDelay = (Math.random()*2) + 's';
+    h.style.fontSize = (14 + Math.random()*14) + 'px';
+    finale.appendChild(h);
+  }
+}
+
+/* ---------------- backdrop dusk -> sunset shift ---------------- */
+const backdrop = document.getElementById('backdrop');
+const duskColors = ['#232a52','#3a3570','#6a4a92','#c05f8a','#f2a65a'];
+function updateBackdrop(){
+  const docH = document.body.scrollHeight - innerHeight;
+  const frac = Math.min(1, Math.max(0, window.scrollY / docH));
+  const idx = frac * (duskColors.length - 1);
+  const i0 = Math.floor(idx), i1 = Math.min(duskColors.length-1, i0+1);
+  backdrop.style.background = `linear-gradient(180deg, ${duskColors[i0]}, ${duskColors[i1]})`;
+}
+window.addEventListener('scroll', updateBackdrop, { passive:true });
+updateBackdrop();
+</script>
+
+<!-- pixel + rounded fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+</body>
+</html>
